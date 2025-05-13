@@ -4,6 +4,11 @@
 module Task2 where
 
 import Parser
+import ParserCombinators
+import Task1
+import Control.Applicative
+import Control.Monad
+import Data.Maybe
 
 -- | Date representation
 --
@@ -19,6 +24,61 @@ data Date = Date Day Month Year
 newtype Day   = Day   Int deriving (Show, Eq)
 newtype Month = Month Int deriving (Show, Eq)
 newtype Year  = Year  Int deriving (Show, Eq)
+
+dayFormal :: Parser Day
+dayFormal = Day <$> do
+  d <- choice [string "0", string "1", string "2", string "3"]
+  m <- choice [string "0", string "1", string "2", string "3", string "4", string "5", string "6", string "7", string "8", string "9"]
+  let n = read (d ++ m) :: Int
+  guard (n >= 1 && n <= 31)
+  return n
+
+dayInformal :: Parser Day
+dayInformal = Day <$> do
+  d <- choice [string "1", string "2", string "3", string "4", string "5", string "6", string "7", string "8", string "9"]
+  m <- optional (choice [string "0", string "1", string "2", string "3", string "4", string "5", string "6", string "7", string "8", string "9"])
+  let n = read (d ++ fromMaybe "" m) :: Int
+  guard (n >= 1 && n <= 31)
+  return n
+
+
+monthFromInteger :: Parser Month
+monthFromInteger = Month <$> do
+  d <- choice [string "0", string "1"]
+  m <- choice [string "0", string "1", string "2", string "3", string "4", string "5", string "6", string "7", string "8", string "9"]
+  let n = read (d ++ m) :: Int
+  guard (n >= 1 && n <= 12)
+  return n
+
+monthFromString :: Parser Month
+monthFromString = Month <$> do
+  m <- choice [string "Jan", string "Feb", string "Mar", string "Apr", string "May", string "Jun", string "Jul", string "Aug", string "Sep", string "Oct", string "Nov", string "Dec"]
+  let n = case m of
+        "Jan" -> 1
+        "Feb" -> 2
+        "Mar" -> 3
+        "Apr" -> 4
+        "May" -> 5
+        "Jun" -> 6
+        "Jul" -> 7
+        "Aug" -> 8
+        "Sep" -> 9
+        "Oct" -> 10
+        "Nov" -> 11
+        "Dec" -> 12
+        _     -> 0 -- get empty after guard
+  guard (n >= 1 && n <= 12)
+  return n
+
+  
+month :: Parser Month
+month = monthFromInteger <|> monthFromString
+
+
+year :: Parser Year
+year = Year . fromInteger <$> nat
+
+
 
 -- | Parses date in one of three formats given as BNF
 --
@@ -59,4 +119,17 @@ newtype Year  = Year  Int deriving (Show, Eq)
 -- Failed [PosError 2 (Unexpected '/'),PosError 0 (Unexpected '1')]
 --
 date :: Parser Date
-date = error "TODO: define date"
+date = dateWithDots
+   <|> dateWithHyphens
+   <|> dateWithSpaces
+
+
+dateWithDots :: Parser Date
+dateWithDots = Date <$> (dayFormal <* char '.') <*> (month <* char '.') <*> year
+
+dateWithHyphens :: Parser Date
+dateWithHyphens = Date <$> (dayFormal <* char '-') <*> (month <* char '-') <*> year
+
+dateWithSpaces :: Parser Date
+dateWithSpaces = flip Date <$> (month <* spaces) <*> (dayInformal <* spaces) <*> year
+
