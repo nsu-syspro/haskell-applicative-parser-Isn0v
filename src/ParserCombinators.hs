@@ -4,6 +4,7 @@
 module ParserCombinators where
 
 import Parser
+import Control.Monad
 
 import Control.Applicative
 
@@ -17,7 +18,7 @@ import Control.Applicative
 -- Failed [Position 0 (Unexpected 'a')]
 --
 char :: Char -> Parser Char
-char = error "TODO: define char"
+char c = satisfy (== c)
 
 -- | Parses given string
 --
@@ -29,7 +30,9 @@ char = error "TODO: define char"
 -- Failed [Position 0 (Unexpected 'a')]
 --
 string :: String -> Parser String
-string = error "TODO: define string"
+string = traverse char
+
+
 
 -- | Skips zero or more space characters
 --
@@ -43,7 +46,7 @@ string = error "TODO: define string"
 -- Parsed "bar" (Position 3 "")
 --
 spaces :: Parser ()
-spaces = error "TODO: define spaces"
+spaces = void $ many (char ' ')
 
 -- | Tries to consecutively apply each of given list of parsers until one succeeds.
 -- Returns the *first* succeeding parser as result or 'empty' if all of them failed.
@@ -58,9 +61,17 @@ spaces = error "TODO: define spaces"
 -- Parsed "ba" (Position 2 "r")
 --
 choice :: (Foldable t, Alternative f) => t (f a) -> f a
-choice = error "TODO: define choice"
+choice = asum
+
+
+
+ws :: Parser a -> Parser a
+ws p = p <* many (char ' ' <|> char '\n' <|> char '\t')
+
+
 
 -- Discover and implement more useful parser combinators below
 --
 -- - <https://hackage.haskell.org/package/parser-combinators-1.3.0/docs/Control-Applicative-Combinators.html>
 -- - <https://hackage.haskell.org/package/parsec-3.1.18.0/docs/Text-Parsec-Char.html>
+

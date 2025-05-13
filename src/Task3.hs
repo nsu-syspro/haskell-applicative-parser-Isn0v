@@ -4,9 +4,12 @@
 module Task3 where
 
 import Parser
-import Data.Char (toLower)
+import ParserCombinators
+import Data.Char
 import Data.List (intercalate)
-
+import Control.Applicative
+import Data.Functor
+import Control.Monad (replicateM)
 -- | JSON representation
 --
 -- See <https://www.json.org>
@@ -38,7 +41,61 @@ data JValue =
 -- Failed [PosError 0 (Unexpected '{'),PosError 1 (Unexpected '{')]
 --
 json :: Parser JValue
-json = error "TODO: define json"
+json = whiteSpace *> choice [jsonObject, jsonArray, jsonString, jsonNumber, jsonBool, jsonNull] <* whiteSpace
+
+whiteSpace :: Parser String
+whiteSpace = many (choice (char <$> [' ', '\n', '\r', '\t']))
+
+jsonNull :: Parser JValue
+jsonNull = string "null" $> JNull
+
+jsonBool :: Parser JValue
+jsonBool = (string "true" $> JBool True) <|> (string "false" $> JBool False)
+
+
+option :: b -> Parser b -> Parser b
+option defaultValue parser = parser <|> pure defaultValue
+
+jsonNumber :: Parser JValue
+jsonNumber = JNumber . read <$> (option "" (string "-")
+                        <> (string "0" <|> (((: []) <$> digitNoZero) <> many digit)))
+                        <> option "" (string "." <> some digit)
+                        <> option "" (choice [string "E", string "e"] <> option "" (choice [string "-", string "+"]) <> some digit)
+
+digitNoZero :: Parser Char
+digitNoZero = satisfy (\x -> '0' < x && x <= '9')
+
+digit :: Parser Char
+digit = satisfy isDigit
+
+
+oneOf :: String -> Parser Char
+oneOf = foldr ((<|>) . char) empty
+
+jsonString :: Parser JValue
+jsonString = JString <$> someString
+
+someString :: Parser String
+someString = char '"' *> stringContent <* char '"' where
+  stringContent :: Parser String
+  stringContent = concat <$> many (((: []) <$> satisfy (\x -> x /= '"' && x /= '\\')) <|> escapeChar)
+  escapeChar = string "\\" <> (choice (string <$> ["\"", "\\", ['/'], "b", "f", "n", "r", "t"]) <|> replicateM 4 (satisfy isHexDigit))
+
+
+jsonArray :: Parser JValue
+jsonArray = JArray <$> (char '[' *> whiteSpace *> elements <* whiteSpace <* char ']')
+  where elements = json `sepBy` (whiteSpace *> char ',' <* whiteSpace)
+
+jsonObject :: Parser JValue
+jsonObject = JObject <$> (char '{' *> whiteSpace *> pairs <* char '}')
+  where
+    pairs = sepBy pair (char ',' <* whiteSpace)
+    pair = (,) <$> someString <* whiteSpace <* char ':' <* whiteSpace <*> json
+
+
+sepBy :: Parser a -> Parser sep -> Parser [a]
+sepBy p sep =
+  (:) <$> p <*> many (sep *> p) <|> pure []
 
 -- * Rendering helpers
 

@@ -1,3 +1,4 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/xY-5QatV)
 # Haskell: Applicative parser
 
 <img alt="points bar" align="right" height="36" src="../../blob/badges/.github/badges/points-bar.svg" />
@@ -277,7 +278,7 @@ dotFormat ::= day "." month "." year
 hyphenFormat ::= day "-" month "-" year
 usFormat ::= monthName " " usDay " " year
 
-usDate ::= nonZeroDigit | "1" digit | "2" digit | "30" | "31"
+usDay ::= nonZeroDigit | "1" digit | "2" digit | "30" | "31"
 day ::= "0" nonZeroDigit | "1" digit | "2" digit | "30" | "31"
 month ::= "0" nonZeroDigit | "10" | "11" | "12"
 year ::= number
