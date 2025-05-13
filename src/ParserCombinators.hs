@@ -32,6 +32,8 @@ char c = satisfy (== c)
 string :: String -> Parser String
 string = traverse char
 
+
+
 -- | Skips zero or more space characters
 --
 -- Usage example:
@@ -60,6 +62,11 @@ spaces = void $ many (char ' ')
 --
 choice :: (Foldable t, Alternative f) => t (f a) -> f a
 choice = asum
+
+
+
+ws :: Parser a -> Parser a
+ws p = p <* many (char ' ' <|> char '\n' <|> char '\t')
 
 
 

@@ -85,6 +85,13 @@ instance Monad Parser where
       Parsed value rest -> runParser (f value) rest
       Failed errors     -> Failed errors)
 
+instance Semigroup a => Semigroup (Parser a) where
+  (<>) (Parser a) (Parser b) = Parser $ \x -> case a x of
+    Failed err -> Failed err
+    Parsed a1 int1 -> case b int1 of
+      Failed err -> Failed err
+      Parsed a2 int2 -> Parsed (a1 <> a2) int2
+
 -- | Parses single character satisfying given predicate
 --
 -- Usage example:

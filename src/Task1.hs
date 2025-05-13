@@ -7,7 +7,6 @@ import Control.Applicative
 import Data.Char
 
 import Parser
-
 -- | Parses natural number (including zero)
 --
 -- Usage example:
